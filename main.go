@@ -1,53 +1,39 @@
 package main
 
-// go:generate easytags $GOFILE json,xml,sql
-
 import (
-	"log"
-	"net/http"
+	"context"
 
+	"cloud.google.com/go/firestore"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/mmcdole/gofeed"
+	"github.com/greytabby/newnify/interfaces/controller"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/xerrors"
 )
 
-type RSSFeed struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ImageURL    string `json:"imageUrl"`
-	Link        string `json:"link"`
-	Content     string `json:"content"`
-}
-
 func main() {
-
 	// create router
+	ctx := context.Background()
+	fsClient, err := createFireStoreClient(ctx)
+	rssContoroller := &controller.RSSContoroller{FsClient: fsClient}
+	if err != nil {
+		logrus.Fatal(err)
+	}
 	r := gin.Default()
-	r.GET("/feeds", feeds)
-	r.Run()
+	config := cors.DefaultConfig()
+	config.AllowOrigins = []string{"http://localhost:3000"}
+	r.Use(cors.New(config))
+	r.GET("/channels", rssContoroller.GetChannels)
+	r.POST("/channels", rssContoroller.PostChannel)
+	r.GET("/channels/:id/feeds", rssContoroller.GetChannelFeeds)
+	r.Run(":7777")
 }
 
-func feeds(c *gin.Context) {
-	fp := gofeed.NewParser()
-
-	feed, err := fp.ParseURL("https://www.secureworks.com/rss?feed=resources")
+func createFireStoreClient(ctx context.Context) (*firestore.Client, error) {
+	projectID := "greytabby-lab"
+	client, err := firestore.NewClient(ctx, projectID)
 	if err != nil {
-		log.Printf("Fetching rss feed failed: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Internal server error",
-		})
+		return nil, xerrors.Errorf("Cannot create firestore client: %w", err)
 	}
-	items := feed.Items
-
-	feeds := []*RSSFeed{}
-	for _, v := range items {
-		feed := &RSSFeed{
-			Title:       v.Title,
-			Description: v.Description,
-			Link:        v.Link,
-			Content:     v.Content,
-		}
-		feeds = append(feeds, feed)
-	}
-
-	c.JSON(http.StatusOK, feeds)
+	return client, nil
 }
