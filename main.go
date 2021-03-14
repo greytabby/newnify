@@ -14,6 +14,7 @@ import (
 
 func main() {
 	appconfig.NewConfig()
+	logrus.Infof("%+v", appconfig.App)
 
 	// create router
 	ctx := context.Background()
