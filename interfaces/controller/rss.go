@@ -52,9 +52,7 @@ func (ctrl *RSSContoroller) GetChannelFeeds(c *gin.Context) {
 	channelFeeds, err := ctrl.getChannelFeeds(ctx, channelID)
 	if err != nil {
 		log.Printf("Fetching rss feed failed: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Internal server error",
-		})
+		ResponseInternalServerError(c, "Internal server error")
 	}
 
 	c.JSON(http.StatusOK, channelFeeds)
@@ -65,10 +63,7 @@ func (ctrl *RSSContoroller) GetChannels(c *gin.Context) {
 	result, err := ctrl.getChannels(ctx)
 	if err != nil {
 		logrus.Errorf("%+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"code":    http.StatusInternalServerError,
-			"message": "Internal server error",
-		})
+		ResponseInternalServerError(c, "Internal server error")
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -79,27 +74,21 @@ func (ctrl *RSSContoroller) PostChannel(c *gin.Context) {
 	var channel RSSChannel
 	err := c.ShouldBindJSON(&channel)
 	if err != nil {
-		logrus.Errorf("BadRequest", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "BadRequest",
-		})
+		logrus.Errorf("BadRequest: %+v", err)
+		ResponseBadRequest(c, "Cannot bind request parameter")
 		return
 	}
 
 	if channel.RSSLink == "" {
-		logrus.Errorf("BadRequest", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "RSSLink is required",
-		})
+		logrus.Errorf("BadRequest: %+v", err)
+		ResponseBadRequest(c, "RSSLink is required")
 		return
 	}
 
 	result, err := ctrl.postChannel(ctx, &channel)
 	if err != nil {
 		logrus.Errorf("Registering rss channel failed: %+v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Internal server error",
-		})
+		ResponseInternalServerError(c, "Internal server error")
 		return
 	}
 
