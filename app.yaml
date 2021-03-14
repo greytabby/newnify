@@ -1,5 +1,9 @@
 runtime: go114
 
 env_variables:
-  ALLOW_ORIGIN: "https://greytabby-lab.web.app/"
+  ALLOW_ORIGIN: "https://greytabby-lab.web.app"
+  TWITTER_CONSUMER_API_KEY: "berglas://newnify-secrets/twitter-consumer-api-key"
+  TWITTER_CONSUMER_API_KEY_SECRET: "berglas://newnify-secrets/twitter-consumer-api-key-secret"
+  TWITTER_ACCESS_TOKEN: "berglas://newnify-secrets/twitter-access-token"
+  TWITTER_ACCESS_TOKEN_SECRET: "berglas://newnify-secrets/twitter-access-token-secret"
   PORT: "8080"
