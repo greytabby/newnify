@@ -46,7 +46,7 @@ func FetchHomeTimeline() ([]twitter.Tweet, error) {
 
 	// get timeline
 	homeTImelineParams := &twitter.HomeTimelineParams{
-		Count: 100,
+		Count: 1000,
 	}
 	tweets, _, err := client.Timelines.HomeTimeline(homeTImelineParams)
 	if err != nil {

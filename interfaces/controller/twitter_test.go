@@ -9,6 +9,7 @@ import (
 
 func TestFetchHomeTimeLine(t *testing.T) {
 	appconfig.NewConfig()
-	controller.FetchHomeTimeline()
+	tweets, _ := controller.FetchHomeTimeline()
+	t.Logf("%+v", tweets[0].User)
 	t.Log("end")
 }
