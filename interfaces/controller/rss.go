@@ -24,6 +24,17 @@ func (ctrl *RSSContoroller) GetChannelFeeds(c *gin.Context) {
 	ResponseOK(c, channelFeeds)
 }
 
+func (ctrl *RSSContoroller) CollectAndSaveFeeds(c *gin.Context) {
+	ctx := c.Request.Context()
+	err := ctrl.collectAndSaveFeeds(ctx)
+	if err != nil {
+		log.Printf("Fetching rss feed and save was failed: %+v", err)
+		ResponseInternalServerError(c, "Internal server error")
+	}
+
+	ResponseOK(c, nil)
+}
+
 func (ctrl *RSSContoroller) GetChannels(c *gin.Context) {
 	ctx := c.Request.Context()
 	channels, err := ctrl.getChannels(ctx)

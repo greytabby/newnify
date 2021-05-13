@@ -23,6 +23,10 @@ func ResponseBadRequest(c *gin.Context, msg string) {
 }
 
 func response(c *gin.Context, code int, data interface{}) {
+	if data == nil {
+		c.String(http.StatusOK, "")
+		return
+	}
 	resp := APIResponse{Data: data}
 	c.JSON(code, resp)
 }

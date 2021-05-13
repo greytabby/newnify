@@ -10,16 +10,17 @@ require (
 	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-playground/validator/v10 v10.4.1 // indirect
+	github.com/greytabby/ogp v0.0.0-20210417141259-d36ed726a641
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mmcdole/gofeed v1.1.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/rs/xid v1.2.1
 	github.com/sirupsen/logrus v1.8.0
+	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/ugorji/go v1.2.3 // indirect
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
-	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
-	golang.org/x/sys v0.0.0-20210123111255-9b0068b26619 // indirect
+	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	google.golang.org/grpc v1.33.2
 	gopkg.in/yaml.v2 v2.4.0 // indirect

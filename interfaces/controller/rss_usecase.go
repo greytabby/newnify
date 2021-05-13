@@ -2,8 +2,15 @@ package controller
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
+	"io"
+	"io/ioutil"
+	"net/http"
+	"sync"
 	"time"
 
+	"github.com/greytabby/ogp"
 	"github.com/mmcdole/gofeed"
 	"github.com/rs/xid"
 	"github.com/sirupsen/logrus"
@@ -14,6 +21,7 @@ import (
 
 const (
 	CollectionRSSChannels = "RssChannels"
+	CollectionRSSItems    = "RssItems"
 )
 
 type RSSChannelFeeds struct {
@@ -36,6 +44,93 @@ type RSSItem struct {
 	Published   *time.Time `json:"published"`
 	GUID        string     `json:"guid"`
 	Read        bool       `json:"read"`
+	ImageURL    string     `json:"imageURL"`
+	ImageWidth  string     `json:"imageWidth"`
+	ImageHeight string     `json:"imageHeight"`
+	ImageAlt    string     `json:"imageAlt"`
+	DocID       string
+}
+
+func (ctrl *RSSContoroller) collectAndSaveFeeds(ctx context.Context) error {
+	channels, err := ctrl.getChannels(ctx)
+	if err != nil {
+		logrus.Errorf("Cannot get channels data")
+		return xerrors.New("Cannot get channels data")
+	}
+
+	wg := sync.WaitGroup{}
+
+	collectFn := func(channel *RSSChannel) {
+		defer wg.Done()
+		fp := gofeed.NewParser()
+		feed, err := fp.ParseURLWithContext(channel.RSSLink, ctx)
+		if err != nil {
+			logrus.Errorf("Error while parsing channel link: %v: %w", channel.Link, err)
+			return
+		}
+
+		rssItems := make([]*RSSItem, 0)
+		for _, item := range feed.Items {
+			resp, err := http.Get(item.Link)
+			if err != nil {
+				logrus.Errorf("Item link access failure: %w", err)
+				return
+			}
+			document, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				logrus.Errorf("Cannot read response body: %w", err)
+				return
+			}
+			og, err := ogp.Parse(document)
+			if err != nil {
+				logrus.Infof("ogp parse error: %w", err)
+			}
+
+			hash := sha1.New()
+			io.WriteString(hash, item.Link)
+			rssItem := &RSSItem{
+				Title:       item.Title,
+				Link:        item.Link,
+				Description: item.Description,
+				Published:   item.PublishedParsed,
+				GUID:        item.GUID,
+				DocID:       hex.EncodeToString(hash.Sum(nil)),
+				Read:        false,
+			}
+
+			if og != nil && len(og.Images) != 0 {
+				image := og.Images[0]
+				rssItem.ImageURL = image.URL
+				rssItem.ImageWidth = image.Width
+				rssItem.ImageHeight = image.Height
+				rssItem.ImageAlt = image.Alt
+			}
+			rssItems = append(rssItems, rssItem)
+		}
+
+		batch := ctrl.FsClient.Batch()
+		for _, i := range rssItems {
+			logrus.Info("DocID:", i.DocID, "Title", i.Title, i.GUID)
+			doc := ctrl.FsClient.Collection(CollectionRSSChannels).Doc(channel.ID).Collection(CollectionRSSItems).Doc(i.DocID)
+			batch.Set(doc, i)
+		}
+
+		_, err = batch.Commit(ctx)
+		if err != nil {
+			logrus.Errorf("RssFeeds write error: %+v", err)
+			return
+		}
+
+		return
+	}
+
+	for _, channel := range channels {
+		wg.Add(1)
+		go collectFn(channel)
+	}
+
+	wg.Wait()
+	return nil
 }
 
 func (ctrl *RSSContoroller) getChannelFeeds(ctx context.Context, channelID string) (*RSSChannelFeeds, error) {

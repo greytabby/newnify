@@ -31,6 +31,7 @@ func main() {
 	config.AllowOrigins = []string{appconfig.App.AllowOrigin}
 	r.Use(cors.New(config))
 	r.GET("/rss/channels", rssContoroller.GetChannels)
+	r.POST("/rss/all-channel-feeds", rssContoroller.CollectAndSaveFeeds)
 	r.POST("/rss/channels", rssContoroller.PostChannel)
 	r.GET("/rss/channels/:id/feeds", rssContoroller.GetChannelFeeds)
 	r.GET("/twitter/hometimeline", tweetController.GetHomeTimeline)
