@@ -148,27 +148,17 @@ func (ctrl *RSSContoroller) getChannelFeeds(ctx context.Context, channelID strin
 		return nil, xerrors.Errorf("Cannot bind channel data: %w", err)
 	}
 
-	// feedを取得
-	fp := gofeed.NewParser()
-	feed, err := fp.ParseURLWithContext(targetChannel.RSSLink, ctx)
-	if err != nil {
-		return nil, xerrors.Errorf("Error while parsing channel link: %v: %w", targetChannel.Link, err)
+	snapShots, err := ctrl.FsClient.Collection(CollectionRSSChannels).Doc(targetChannel.ID).Collection(CollectionRSSItems).Documents(ctx).GetAll()
+	rssItems := make([]*RSSItem, 0)
+	for _, s := range snapShots {
+		var rssItem RSSItem
+		err = s.DataTo(&rssItem)
+		if err != nil {
+			return nil, xerrors.Errorf("Cannot bind rss item data: %w", err)
+		}
+		rssItems = append(rssItems, &rssItem)
 	}
 
-	items := feed.Items
-	rssItems := make([]*RSSItem, len(items))
-	for i, v := range items {
-		item := &RSSItem{
-			Title:       v.Title,
-			Link:        v.Link,
-			Description: v.Description,
-			Published:   v.PublishedParsed,
-			GUID:        v.GUID,
-			Read:        false,
-		}
-		rssItems[i] = item
-	}
-	// ctrl.FsClient.Collection("test").Add(ctx, channel)
 	channelFeeds := &RSSChannelFeeds{
 		Channel: &targetChannel,
 		Items:   rssItems,
